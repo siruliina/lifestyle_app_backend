@@ -76,7 +76,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 
 # Make sure this is set to True in production
-SECURE_COOKIES = True  # Enable secure cookies for production (HTTPS only)
+SECURE_COOKIES = False  # Enable secure cookies for production (HTTPS only)
 
 # Cookie settings for JWT tokens
 CSRF_COOKIE_HTTPONLY = True
