@@ -10,10 +10,6 @@ from datetime import timedelta
 from django.conf import settings
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework import status
-from rest_framework_simplejwt.exceptions import TokenError
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework_simplejwt.backends import TokenBackend
 from rest_framework_simplejwt.tokens import AccessToken
 
 class RegisterUserView(generics.CreateAPIView):
