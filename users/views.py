@@ -5,17 +5,16 @@ from django.conf import settings
 from .serializers import UserSerializer
 from datetime import timedelta
 
-from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework import status
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import status, generics
+from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.response import Response
-from rest_framework import generics, viewsets
 
 from drf_spectacular.utils import extend_schema
 
@@ -23,7 +22,6 @@ from drf_spectacular.utils import extend_schema
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer  # Associating the view with the UserSerializer
     permission_classes = [AllowAny]  # Token is not required when signing up
-    authentication_classes = []
 
 
 class LoginUserView(TokenObtainPairView):
@@ -81,6 +79,26 @@ class LoginUserView(TokenObtainPairView):
         return response
 
 
+class LogoutUserView(APIView):
+    """
+    This view will handle logging out by clearing the refresh token cookie.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def post(self, request):
+        """
+        Log out the user by clearing the refresh token cookie.
+        """
+        response = Response({"message": "Logout successful."}, status=200)
+
+        # Remove the refresh_token cookie by setting an expiration date in the past
+        response.delete_cookie("refresh_token")
+
+        return response
+
+
 class CustomTokenRefreshView(TokenRefreshView):
     permission_classes = [AllowAny]
 
@@ -117,15 +135,14 @@ class AllUsersView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
 
     @extend_schema(
         summary="Retrieve a list of all users",
         description="This endpoint returns all users from the system.",
         responses={
-            200: UserSerializer(
-                many=True
-            ),  # This ensures the response is documented with the correct serializer
-            401: "Unauthorized",  # Optional, in case of permission issues
+            200: UserSerializer(many=True),
+            401: {"type": "object", "properties": {"error": {"type": "string"}}},
         },
     )
     def get(self, request):
@@ -133,9 +150,14 @@ class AllUsersView(APIView):
         Custom get method for retrieving all users.
         """
 
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+        try:
+            users = User.objects.all()
+            serializer = UserSerializer(users, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response(
+                {"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class UserViewSet(APIView):
@@ -143,6 +165,20 @@ class UserViewSet(APIView):
     Views for individual user.
     """
 
+    serializer_class = UserSerializer
+
+    @extend_schema(
+        summary="Retrieve a single user by user id",
+        description="This endpoint returns a single user from the system.",
+        responses={
+            200: UserSerializer(),
+            401: {"type": "object", "properties": {"error": {"type": "string"}}},
+            404: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}},
+            },
+        },
+    )
     def get(self, request, pk):
         """
         Custom get method for retrieving a single user.
@@ -157,6 +193,22 @@ class UserViewSet(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Update a user by user id",
+        description="This endpoint allows partial update for user details.",
+        responses={
+            200: UserSerializer(),
+            400: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}},
+            },  # Handle 400 for invalid data
+            401: {"type": "object", "properties": {"error": {"type": "string"}}},
+            404: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}},
+            },  # Handle 404 for user not found
+        },
+    )
     def patch(self, request, pk):
         """
         Custom patch method for user.
@@ -175,6 +227,17 @@ class UserViewSet(APIView):
 
         return Response(serializer.errors, status=400)
 
+    @extend_schema(
+        summary="Delete a user by user id",
+        description="This endpoint deletes a user from the system.",
+        responses={
+            204: {"description": "User deleted successfully"},
+            404: {
+                "type": "object",
+                "properties": {"error": {"type": "string"}},
+            },  # Handle 404 for user not found
+        },
+    )
     def delete(self, request, pk):
         """
         Custom delete method for user.

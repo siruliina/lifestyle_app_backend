@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     RegisterUserView,
     LoginUserView,
+    LogoutUserView,
     CustomTokenRefreshView,
     UserViewSet,
     AllUsersView,
@@ -10,6 +11,8 @@ from .views import (
 urlpatterns = [
     # Token obtain view (Login)
     path("login/", LoginUserView.as_view(), name="login"),
+    # Logout view = remove refresh token from cookies
+    path("logout/", LogoutUserView.as_view(), name="logout"),
     # Registration view
     path("register/", RegisterUserView.as_view(), name="register"),
     # Token refresh view
