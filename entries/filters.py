@@ -10,7 +10,4 @@ class EntryFilter(django_filters.FilterSet):
 
     class Meta:
         model = Entry
-        fields = [
-            "author",
-            "created_at",
-        ]
+        fields = ["author", "created_at", "favorite"]
