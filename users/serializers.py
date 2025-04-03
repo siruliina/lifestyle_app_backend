@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    User._meta.get_field("email")._unique = True
+
     class Meta:
         model = User  # Model from Django's built-in authentication system
         fields = ["id", "username", "password", "email"]  # What data we want to expose
