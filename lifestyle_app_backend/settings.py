@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "users",
     "entries",
     "events",
+    "checklists",
 ]
 
 REST_FRAMEWORK = {
