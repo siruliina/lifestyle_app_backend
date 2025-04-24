@@ -21,6 +21,20 @@ class ChecklistSerializer(serializers.ModelSerializer):
 
         return checklist
 
+    def update(self, instance, validated_data):
+        checklist_items_data = validated_data.pop("checklist_items", [])
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        instance.checklist_items.all().delete()
+
+        for item_data in checklist_items_data:
+            ChecklistItem.objects.create(checklist=instance, **item_data)
+
+        return instance
+
     class Meta:
         model = Checklist
         fields = ["id", "title", "description", "author", "checklist_items"]
